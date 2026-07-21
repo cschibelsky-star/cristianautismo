@@ -1,0 +1,172 @@
+name: Deploy HostGator
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-cristianautismo-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Backup, deploy e validacao
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      REMOTE_DIR: /home1/cris1649/cristianautismo.com.br
+      BACKUP_DIR: /home1/cris1649/backups-cristianautismo
+      SITE_URL: https://cristianautismo.com.br
+
+    steps:
+      - name: Baixar codigo
+        uses: actions/checkout@v4
+
+      - name: Validar secrets obrigatorios
+        shell: bash
+        env:
+          HOST: ${{ secrets.HOSTGATOR_HOST }}
+          PORT: ${{ secrets.HOSTGATOR_PORT }}
+          USER: ${{ secrets.HOSTGATOR_USER }}
+          KEY: ${{ secrets.HOSTGATOR_SSH_KEY }}
+        run: |
+          set -euo pipefail
+
+          test -n "$HOST" || { echo "Secret HOSTGATOR_HOST ausente"; exit 1; }
+          test -n "$PORT" || { echo "Secret HOSTGATOR_PORT ausente"; exit 1; }
+          test -n "$USER" || { echo "Secret HOSTGATOR_USER ausente"; exit 1; }
+          test -n "$KEY" || { echo "Secret HOSTGATOR_SSH_KEY ausente"; exit 1; }
+
+      - name: Configurar SSH
+        shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTGATOR_SSH_KEY }}
+          SSH_HOST: ${{ secrets.HOSTGATOR_HOST }}
+          SSH_PORT: ${{ secrets.HOSTGATOR_PORT }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Testar conexao SSH
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.HOSTGATOR_HOST }}
+          SSH_PORT: ${{ secrets.HOSTGATOR_PORT }}
+          SSH_USER: ${{ secrets.HOSTGATOR_USER }}
+        run: |
+          set -euo pipefail
+
+          ssh \
+            -i ~/.ssh/id_ed25519 \
+            -p "$SSH_PORT" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=20 \
+            "$SSH_USER@$SSH_HOST" \
+            "echo 'Conexao SSH confirmada'"
+
+      - name: Criar backup da producao
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.HOSTGATOR_HOST }}
+          SSH_PORT: ${{ secrets.HOSTGATOR_PORT }}
+          SSH_USER: ${{ secrets.HOSTGATOR_USER }}
+        run: |
+          set -euo pipefail
+
+          BACKUP_NAME="cristianautismo-$(date -u +'%Y%m%d-%H%M%S').tar.gz"
+
+          ssh \
+            -i ~/.ssh/id_ed25519 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            "mkdir -p '$BACKUP_DIR' && tar -czf '$BACKUP_DIR/$BACKUP_NAME' -C '$REMOTE_DIR' ."
+
+          echo "Backup criado: $BACKUP_NAME"
+
+      - name: Publicar arquivos
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.HOSTGATOR_HOST }}
+          SSH_PORT: ${{ secrets.HOSTGATOR_PORT }}
+          SSH_USER: ${{ secrets.HOSTGATOR_USER }}
+        run: |
+          set -euo pipefail
+
+          rsync -az \
+            --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='campanha/data/apoios.json' \
+            --exclude='campanha/data/admin.json' \
+            -e "ssh -i ~/.ssh/id_ed25519 -p $SSH_PORT" \
+            ./ \
+            "$SSH_USER@$SSH_HOST:$REMOTE_DIR/"
+
+      - name: Validar arquivos no servidor
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.HOSTGATOR_HOST }}
+          SSH_PORT: ${{ secrets.HOSTGATOR_PORT }}
+          SSH_USER: ${{ secrets.HOSTGATOR_USER }}
+        run: |
+          set -euo pipefail
+
+          ssh \
+            -i ~/.ssh/id_ed25519 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            "test -s '$REMOTE_DIR/index.html' && echo 'index.html publicado com sucesso'"
+
+      - name: Validar site publico
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for tentativa in 1 2 3 4 5; do
+            STATUS="$(curl -L -sS -o /tmp/site.html -w '%{http_code}' \
+              --connect-timeout 15 \
+              --max-time 30 \
+              "$SITE_URL/?deploy=${GITHUB_SHA}")"
+
+            if [ "$STATUS" = "200" ] && [ -s /tmp/site.html ]; then
+              echo "Site respondeu HTTP 200"
+              echo "Tamanho recebido: $(wc -c < /tmp/site.html) bytes"
+              exit 0
+            fi
+
+            echo "Tentativa $tentativa falhou. HTTP: $STATUS"
+            sleep 10
+          done
+
+          echo "Falha na validacao publica do site"
+          exit 1
+
+      - name: Limitar backups antigos
+        if: success()
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.HOSTGATOR_HOST }}
+          SSH_PORT: ${{ secrets.HOSTGATOR_PORT }}
+          SSH_USER: ${{ secrets.HOSTGATOR_USER }}
+        run: |
+          set -euo pipefail
+
+          ssh \
+            -i ~/.ssh/id_ed25519 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            "cd '$BACKUP_DIR' && ls -1t cristianautismo-*.tar.gz 2>/dev/null | tail -n +11 | xargs -r rm --"
