@@ -1,0 +1,70 @@
+CRISTIAN PELO AUTISMO - V11 AJUSTADA
+
+1) Como publicar no cPanel / HostGator
+Extraia o conteúdo do ZIP direto na raiz do domínio:
+
+public_html/index.html
+public_html/style.css
+public_html/script.js
+public_html/assets/
+public_html/campanha/
+public_html/campanha/admin/
+public_html/leis-e-direitos/
+
+Não deixe dentro de uma pasta interna como public_html/cristianautismo_site_premium_v11/.
+
+2) Correção visual
+Esta versão ajusta a primeira dobra da Home para evitar sobreposição entre o banner/logo e o mockup principal.
+Os mockups continuam como ícones de navegação 01 a 06.
+
+3) Painel admin da campanha
+Acesso:
+/campanha/admin/
+
+Senha inicial provisória:
+Cristian@2026!
+
+IMPORTANTE: troque esta senha depois de publicar.
+O painel usa sessão PHP.
+
+4) Como trocar a senha do admin
+Abra o arquivo:
+/campanha/config.php
+
+No terminal, gere um novo hash com:
+php -r 'echo password_hash("SUA_NOVA_SENHA", PASSWORD_DEFAULT), PHP_EOL;'
+
+Cole o hash gerado no lugar do valor de CRISTIAN_ADMIN_PASSWORD_HASH.
+
+5) Dados dos apoios
+Os apoios ficam em:
+/campanha/data/apoios.json
+
+A pasta data possui .htaccess para bloquear acesso direto.
+
+Atualização V12:
+- A imagem do banner "Mais inclusão, mais respeito" foi removida da primeira página e movida para a área da campanha.
+- A seção "Vivência, causa e compromisso público" agora usa a imagem sobre-cristian-lucas.png.
+- A seção "Levar informação também é promover inclusão" agora usa a imagem palestra-cristian-premium.png.
+- As imagens dessas duas seções foram ajustadas para não cortar partes importantes do corpo.
+
+
+V14: Na página /campanha, a imagem oficial "Mais inclusão, mais respeito" foi posicionada exatamente na abertura/hero ao lado do título "Declare seu apoio à causa da inclusão". O formulário foi movido para a seção seguinte.
+
+
+V15: A seção pública de campanha na Home foi reduzida para um link simples, sem bloco de texto e sem botão de painel administrativo.
+
+
+Carimbo Vitrine IA Pro
+- Foi incluído o carimbo "by Vitrine IA Pro" no rodapé das páginas públicas.
+- O logo está em assets/img/vitrine-ia-pro-logo.svg.
+
+
+V18 - Ajuste visual: removida a area "Acesse / Areas do projeto" com mockups da Home e removido o link Atalhos do menu. A pagina ficou mais direta, mantendo as secoes principais e o link simples da campanha.
+
+V23 - SENHA CADASTRADA PELO PAINEL
+- O painel administrativo da campanha nao usa mais senha fixa no config.php.
+- No primeiro acesso em /campanha/admin/, o proprio painel pede para cadastrar a senha.
+- Depois disso, o login passa a usar a senha cadastrada.
+- Tambem foi incluido botao "Alterar senha" dentro do painel.
+- O hash da senha fica em campanha/data/admin.json, protegido pelo .htaccess da pasta data.
