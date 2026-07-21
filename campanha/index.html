@@ -1,0 +1,34 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Campanha de Apoio | Cristian Pelo Autismo</title><meta name="description" content="Declare apoio à causa da inclusão e ajude o Cristian Pelo Autismo a mapear a rede de apoio por cidade e bairro."><link rel="stylesheet" href="../style.css"></head><body>
+<header class="topbar"><div class="wrap nav"><a class="brand" href="../"><img src="../assets/img/logo.webp" alt="Logo"><span>Cristian Pelo Autismo</span></a><nav class="navlinks"><a href="../">Site principal</a><a href="admin/">Admin</a><a class="btn" href="https://wa.me/5519974198194">WhatsApp</a></nav></div></header>
+<section class="hero campaign-page-hero"><div class="wrap">
+  <div class="campaign-hero campaign-hero-main">
+    <div class="campaign-copy">
+      <span class="kicker" style="background:rgba(255,255,255,.16);color:#fff">Campanha</span>
+      <h1 style="font-size:clamp(2.6rem,5.4vw,5.4rem);line-height:.95;color:#fff">Declare seu apoio à causa da inclusão.</h1>
+      <p class="lead" style="color:#fff">Cadastre seu apoio para fortalecer a rede de famílias, voluntários e pessoas que acreditam em mais respeito, dignidade e direitos para pessoas autistas e pessoas com deficiência.</p>
+      <div class="metrics campaign-metrics" style="color:var(--ink)">
+        <div class="metric"><strong id="publicCounter">0</strong><span>apoios registrados</span></div>
+        <div class="metric"><strong>Sumaré</strong><span>visão por cidade e bairro</span></div>
+        <div class="metric"><strong>Admin</strong><span>painel protegido</span></div>
+      </div>
+    </div>
+    <div class="campaign-hero-image">
+      <img src="../assets/img/campanha-banner-oficial.webp" alt="Cristian Pelo Autismo - Mais inclusão, mais respeito">
+    </div>
+  </div>
+</div></section>
+<section class="section soft campaign-form-section"><div class="wrap split campaign-form-grid">
+  <div>
+    <span class="kicker">Declare apoio</span>
+    <h2>Faça parte desta rede.</h2>
+    <p>Preencha seus dados para registrar apoio à causa. As informações ajudam a organizar a rede de famílias, apoiadores e voluntários por cidade e bairro.</p>
+  </div>
+  <div class="panel"><form id="apoioForm" class="form"><input class="field" name="nome" placeholder="Nome completo" required><input class="field" name="whatsapp" placeholder="WhatsApp" required><input class="field" name="email" placeholder="E-mail"><input class="field" name="cidade" placeholder="Cidade" required><input class="field" name="bairro" placeholder="Bairro / região" required><select class="field" name="tipo"><option>Quero apoiar a causa</option><option>Sou família atípica</option><option>Quero ser voluntário(a)</option><option>Quero receber informações</option><option>Quero ajudar em ações</option></select><textarea class="field" name="mensagem" rows="3" placeholder="Mensagem opcional"></textarea><label style="font-size:.88rem"><input type="checkbox" name="autorizo" value="sim" required> Autorizo o contato do projeto Cristian Pelo Autismo.</label><button class="btn" type="submit">Registrar apoio</button><div id="formMsg"></div></form></div>
+</div></section>
+<section class="section white"><div class="wrap split"><div><span class="kicker">Por que declarar apoio?</span><h2>Para saber onde a causa está crescendo.</h2><p>O contador mostra a força pública do movimento, e o painel administrativo ajuda a enxergar cidades, bairros e regiões onde há famílias, voluntários e pessoas dispostas a apoiar.</p><div class="cards"><div class="card"><h3>Mapa de apoio</h3><p>Cidade e bairro/região para entender onde concentrar ações.</p></div><div class="card"><h3>Rede de contato</h3><p>Dados autorizados para comunicação responsável com apoiadores.</p></div><div class="card"><h3>Organização</h3><p>Exportação para CSV e visão administrativa.</p></div></div></div><div class="campaign-visual-stack">
+  <div class="mock-tile"><img src="../assets/img/mockup-apoie.png" alt="Mockup Apoie a Causa"></div>
+</div></div></section>
+<footer class="footer"><div class="wrap footer-grid"><div><img src="../assets/img/logo.webp" style="width:160px;border-radius:18px" alt="Logo"><h3>Campanha de apoio à inclusão.</h3></div><div><strong>Links</strong><a href="../">Site principal</a><a href="admin/">Admin</a></div><div><strong>Contato</strong><a href="https://wa.me/5519974198194">WhatsApp</a><a href="https://www.instagram.com/cristian_autismo">Instagram</a></div></div><div class="vitrine-stamp" aria-label="Desenvolvido por Vitrine IA Pro"><span>by</span><img src="../assets/img/vitrine-ia-pro-logo-oficial.png" alt="Vitrine IA Pro"></div></footer>
+<script src="../script.js"></script><script>
+document.getElementById('apoioForm').addEventListener('submit',async(e)=>{e.preventDefault();const msg=document.getElementById('formMsg');msg.innerHTML='Enviando...';try{const fd=new FormData(e.target);const r=await fetch('api.php?action=save',{method:'POST',body:fd});const j=await r.json();if(j.ok){msg.innerHTML='<div class="notice">Apoio registrado com sucesso. Obrigado!</div>';e.target.reset();loadCounter()}else{msg.innerHTML='<div class="notice">Não foi possível registrar. Confira os campos.</div>'}}catch(err){msg.innerHTML='<div class="notice">Erro de conexão. Tente novamente.</div>'}});
+</script></body></html>
