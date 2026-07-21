@@ -1,3 +1,19 @@
+# Dados dinâmicos e credenciais da campanha
 campanha/data/apoios.json
 campanha/data/admin.json
+
+# Backups e pacotes de implantação
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# Vídeos grandes publicados diretamente na hospedagem
 assets/video/*.mp4
+
+# Arquivos temporários e locais
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
