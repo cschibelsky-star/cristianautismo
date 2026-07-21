@@ -12,15 +12,83 @@ const laws=[
  {cat:'tea',title:'Política Municipal de Atendimento Integrado à Pessoa com TEA',desc:'Institui diretrizes municipais para atendimento integrado à pessoa com Transtorno do Espectro Autista, fortalecendo a rede de cuidado e inclusão.',ref:'Lei Ordinária nº 6.447/2020',date:'17/12/2020',url:'https://legislacaodigital.com.br/Sumare-SP/LeisOrdinarias/6447-2020'},
  {cat:'pcd',title:'Meia-entrada para pessoas com deficiência',desc:'Dispõe sobre o benefício da meia-entrada para estudantes, idosos, pessoas com deficiência e jovens comprovadamente carentes em eventos culturais e esportivos.',ref:'Lei Ordinária nº 6.172/2019',date:'03/04/2019',url:'https://legislacaodigital.com.br/Sumare-SP/LeisOrdinarias/6172-2019'},
  {cat:'pcd',title:'Dia Municipal do Surdo',desc:'Inclui no Calendário Oficial de Eventos do Município o Dia Municipal do Surdo, fortalecendo a visibilidade e a conscientização sobre a comunidade surda.',ref:'Lei Ordinária nº 6.114/2018',date:'05/11/2018',url:'https://legislacaodigital.com.br/Sumare-SP/LeisOrdinarias/6114-2018'}
-]
+];
+
 function lawCard(l){
  const base=location.pathname.includes('/leis-e-direitos/')?'../':'';
  const icon=l.cat==='tea'?base+'assets/icons/neuro.svg':base+'assets/icons/access.svg';
  const label=l.cat==='tea'?'TEA • Autismo':'PCD • Acessibilidade';
  const extra=l.date?`<span class="tag light">${l.date}</span>`:'';
  const hint=l.review?`<small class="law-hint">${l.review}</small>`:'';
- return `<article class="law-card" data-cat="${l.cat}"><img class="law-icon" src="${icon}" alt="${label}"><div class="law-tags"><span class="tag">${label}</span>${extra}</div><h3>${l.title}</h3><p>${l.desc}</p><div class="ref">Referência: ${l.ref}</div>${hint}<a class="law-link" href="${l.url}" target="_blank" rel="noopener">Consultar fonte oficial</a></article>`
+ return `<article class="law-card" data-cat="${l.cat}"><img class="law-icon" src="${icon}" alt="${label}"><div class="law-tags"><span class="tag">${label}</span>${extra}</div><h3>${l.title}</h3><p>${l.desc}</p><div class="ref">Referência: ${l.ref}</div>${hint}<a class="law-link" href="${l.url}" target="_blank" rel="noopener noreferrer">Consultar fonte oficial</a></article>`;
 }
-function mountLaws(limit){const el=document.getElementById('lawPreview')||document.getElementById('lawGrid');if(el) el.innerHTML=(limit?laws.slice(0,6):laws).map(lawCard).join('')}
-async function loadCounter(){try{const r=await fetch('/campanha/api.php?action=count',{cache:'no-store'});const j=await r.json();['homeCounter','campaignCounter','publicCounter'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=j.total||0});}catch(e){}}
-mountLaws(location.pathname.includes('leis-e-direitos')?0:6);loadCounter();
+
+function mountLaws(limit){
+ const el=document.getElementById('lawPreview')||document.getElementById('lawGrid');
+ if(el) el.innerHTML=(limit?laws.slice(0,6):laws).map(lawCard).join('');
+}
+
+async function loadCounter(){
+ try{
+  const r=await fetch('/campanha/api.php?action=count',{cache:'no-store'});
+  if(!r.ok) throw new Error('counter_unavailable');
+  const j=await r.json();
+  const total=Number.isFinite(Number(j.total))?Number(j.total):0;
+  ['homeCounter','campaignCounter','publicCounter'].forEach(id=>{
+   const e=document.getElementById(id);
+   if(e){
+    e.textContent=total.toLocaleString('pt-BR');
+    e.setAttribute('aria-label',`${total} apoios registrados`);
+   }
+  });
+ }catch(error){
+  console.warn('Não foi possível carregar o contador de apoios.',error);
+ }
+}
+
+function setupVideoFallback(){
+ const videos=[...document.querySelectorAll('video')];
+ videos.forEach(video=>{
+  const source=video.querySelector('source[src]');
+  if(!source||!source.src.includes('centro-tea.mp4')) return;
+
+  const card=video.closest('.project-video-card');
+  const directLinks=[...document.querySelectorAll('a[href*="centro-tea.mp4"]')];
+
+  const markUnavailable=()=>{
+   if(card){
+    card.innerHTML='<div class="media-unavailable" role="status"><strong>Vídeo em preparação</strong><p>A apresentação da Clínica Escola será publicada assim que o arquivo oficial estiver disponível.</p></div>';
+   }
+   directLinks.forEach(link=>{
+    link.removeAttribute('href');
+    link.setAttribute('aria-disabled','true');
+    link.classList.add('is-disabled');
+    link.textContent='Vídeo em preparação';
+   });
+  };
+
+  video.addEventListener('error',markUnavailable,{once:true});
+  source.addEventListener('error',markUnavailable,{once:true});
+ });
+}
+
+function setupAccessibleNavigation(){
+ document.querySelectorAll('a[href^="#"]').forEach(link=>{
+  link.addEventListener('click',event=>{
+   const id=link.getAttribute('href');
+   if(!id||id==='#') return;
+   const target=document.querySelector(id);
+   if(!target) return;
+   event.preventDefault();
+   const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+   target.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});
+   target.setAttribute('tabindex','-1');
+   target.focus({preventScroll:true});
+  });
+ });
+}
+
+mountLaws(location.pathname.includes('leis-e-direitos')?0:6);
+loadCounter();
+setupVideoFallback();
+setupAccessibleNavigation();
